@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake-News-Detection-Home-Page</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to right, #4facfe, #00f2fe); /* Nền gradient nhẹ */
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1400px; /* Tăng tối đa chiều rộng container */
+            flex-wrap: wrap;
+            gap: 20px; /* Thêm khoảng cách giữa các khối */
+        }
+
+        .input-container {
+            flex: 1;
+            min-width: 600px; /* Tăng chiều rộng tối thiểu */
+            background-color: #007bff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .result-container {
+            flex: 1;
+            min-width: 600px;
+            background-color: #28a745;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        h1, h2 {
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        textarea {
+            width: 100%;
+            height: 400px; /* Tăng chiều cao */
+            min-height: 400px;
+            padding: 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            line-height: 1.5;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            resize: vertical; /* Cho phép người dùng kéo để thay đổi kích thước */
+        }
+
+        input[type="submit"] {
+            padding: 12px 24px;
+            font-size: 18px;
+            border: none;
+            border-radius: 5px;
+            background-color: #ff4e50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: block;
+            margin-top: 15px;
+            width: 100%; /* Nút submit rộng 100% */
+            text-align: center;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #ff7b50;
+        }
+
+        #myChart {
+            max-width: 600px;
+            width: 100%;
+            height: 300px;
+            margin: 20px auto;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .links-container {
+            width: 100%;
+            margin-top: 20px;
+            text-align: left;
+            background-color: #ffc107;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .links-container ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .links-container li {
+            margin: 10px 0;
+        }
+
+        .links-container a {
+            color: #212529;
+            text-decoration: none;
+        }
+
+        .links-container a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1></h1>
+    <div class="container">
+        <div class="input-container">
+            <h2></h2>
+            <form method="POST">
+                <textarea name="content" required placeholder="Nhập nội dung tin tức ở đây...">{{ request.form.content }}</textarea><br>
+                <input type="submit" value="Kiểm tra">
+            </form>
+        </div>
+
+        {% if probabilities %}
+        <!-- Chỉ hiển thị phần này khi có dữ liệu predictions -->
+        <div class="result-container">
+            <h2></h2>
+            <canvas id="myChart"></canvas>
+            <script>
+                const probabilities = {{ probabilities | tojson }};
+                const labels = Object.keys(probabilities);
+                const data = Object.values(probabilities);
+
+                const ctx = document.getElementById('myChart').getContext('2d');
+                const myChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Xác suất',
+                            data: data,
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.8)',
+                                'rgba(0, 200, 83, 0.8)',
+                                'rgba(255, 235, 59, 0.8)',
+                                'rgba(41, 121, 255, 0.8)',
+                                'rgba(255, 152, 0, 0.8)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(0, 200, 83, 1)',
+                                'rgba(255, 235, 59, 1)',
+                                'rgba(41, 121, 255, 1)',
+                                'rgba(255, 152, 0, 1)'
+                            ],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: 'black',
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Kết quả dự đoán',
+                                color: 'black'
+                            }
+                        }
+                    }
+                });
+            </script>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if articles %}
+    <!-- Chỉ hiển thị phần này khi có các bài báo liên quan -->
+    <div class="links-container">
+        <h2>Các bài báo liên quan</h2>
+        <ul>
+            {% for article in articles %}
+                <li><a href="{{ article.link }}" target="_blank" rel="noopener noreferrer">{{ article.title }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+</body>
+</html>
